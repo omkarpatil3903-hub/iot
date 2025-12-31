@@ -83,22 +83,30 @@ export const FirebaseProvider = ({ children }) => {
             setIsConnected(snap.val() === true);
         });
 
-        // Listen for ESP32 current sensor data (temperature & humidity from DHT22)
+        // Listen for ESP32 current sensor data (temperature, humidity & soil moisture)
         const esp32CurrentUnsubscribe = onValue(
             esp32CurrentRef,
             (snapshot) => {
                 const esp32Data = snapshot.val();
                 if (esp32Data) {
                     console.log('ESP32 sensor data received:', esp32Data);
-                    // Merge ESP32 data with current data
-                    setCurrentData(prev => ({
-                        ...MOCK_DATA.current,
-                        ...prev,
-                        temperature: esp32Data.temperature ?? prev?.temperature ?? MOCK_DATA.current.temperature,
-                        humidity: esp32Data.humidity ?? prev?.humidity ?? MOCK_DATA.current.humidity,
+                    // Use ONLY real ESP32 data (no mock fallback)
+                    setCurrentData({
+                        // DHT22 sensor data
+                        temperature: esp32Data.temperature,
+                        humidity: esp32Data.humidity,
+                        // Soil moisture sensors (3 depths)
+                        moisture_15cm: esp32Data.moisture_15cm,
+                        moisture_30cm: esp32Data.moisture_30cm,
+                        moisture_45cm: esp32Data.moisture_45cm,
+                        // Rain (not from ESP32 yet, keep previous or default)
+                        rain_active: false,
+                        rain_intensity: 0,
+                        // Timestamps
                         esp32Timestamp: esp32Data.timestamp,
+                        timestamp: esp32Data.timestamp,
                         lastUpdate: Date.now()
-                    }));
+                    });
                     setIsLoading(false);
                 }
             },
@@ -107,29 +115,23 @@ export const FirebaseProvider = ({ children }) => {
             }
         );
 
-        // Listen for current sensor data (fallback/additional sensors)
+        // Listen for current sensor data (fallback/additional sensors from current_status path)
         const currentUnsubscribe = onValue(
             currentRef,
             (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
+                    // Merge with existing ESP32 data if available
                     setCurrentData(prev => ({
-                        ...MOCK_DATA.current,
                         ...prev,
                         ...data
                     }));
-                } else if (!currentData) {
-                    // Use mock data only if no data exists yet
-                    setCurrentData(MOCK_DATA.current);
                 }
                 setIsLoading(false);
             },
             (err) => {
                 console.error('Firebase read error:', err);
                 setError(err.message);
-                if (!currentData) {
-                    setCurrentData(MOCK_DATA.current);
-                }
                 setIsLoading(false);
             }
         );
@@ -140,24 +142,56 @@ export const FirebaseProvider = ({ children }) => {
             (snapshot) => {
                 const sensorHistory = snapshot.val();
                 if (sensorHistory) {
-                    // Convert ESP32 sensor data to temperature history format
+                    // Convert ESP32 sensor data to history format
                     const entries = Object.entries(sensorHistory);
-                    // Get latest 24 entries for historical chart
+                    // Get latest 24 entries for historical charts
                     const recentEntries = entries.slice(-24);
-                    const temperatureHistory = recentEntries.map(([timestamp, data]) => ({
-                        timestamp: new Date(parseInt(timestamp)).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        }),
-                        temperature: data.temperature,
-                        humidity: data.humidity
-                    }));
 
+                    // Calculate timestamps based on current time going backwards
+                    // Each entry is ~70 seconds apart based on ESP32 interval
+                    const now = new Date();
+                    const intervalMs = 70000; // 70 seconds between readings
+
+                    // Generate proper timestamps (newest to oldest, then reverse)
+                    const temperatureHistory = recentEntries.map(([key, data], index) => {
+                        // Calculate time: current time minus (entries from end * interval)
+                        const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
+                        const entryTime = new Date(now.getTime() - timeOffset);
+
+                        return {
+                            timestamp: entryTime.toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            }),
+                            temperature: data.temperature,
+                            humidity: data.humidity
+                        };
+                    });
+
+                    // Moisture history (for moisture charts)
+                    const moistureHistory = recentEntries.map(([key, data], index) => {
+                        const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
+                        const entryTime = new Date(now.getTime() - timeOffset);
+
+                        return {
+                            timestamp: entryTime.toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            }),
+                            surface: data.moisture_15cm,
+                            rootZone: data.moisture_30cm,
+                            deep: data.moisture_45cm
+                        };
+                    });
+
+                    // Only use real data, no mock fallback
                     setHistoricalData(prev => ({
-                        ...MOCK_DATA.historical,
                         ...prev,
-                        temperature: temperatureHistory.length > 0 ? temperatureHistory : prev?.temperature ?? MOCK_DATA.historical.temperature
+                        temperature: temperatureHistory.length > 0 ? temperatureHistory : prev?.temperature,
+                        moisture: moistureHistory.length > 0 ? moistureHistory : prev?.moisture,
+                        rain: prev?.rain || [] // Keep rain data if exists
                     }));
                 }
             },
