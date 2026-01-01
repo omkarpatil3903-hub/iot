@@ -104,7 +104,7 @@ const TemperatureChart = ({ data = [] }) => {
             {/* Chart */}
             <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#F97316" stopOpacity={0.3} />
@@ -128,21 +128,21 @@ const TemperatureChart = ({ data = [] }) => {
                         <YAxis
                             yAxisId="temp"
                             domain={['auto', 'auto']}
-                            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+                            tick={{ fill: 'rgba(255,255,255,0.8)', fontSize: 11 }}
                             axisLine={false}
                             tickLine={false}
-                            unit="°"
-                            width={35}
+                            tickFormatter={(value) => `${value}°`}
+                            width={50}
                         />
                         <YAxis
                             yAxisId="humidity"
                             orientation="right"
                             domain={[0, 100]}
-                            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+                            tick={{ fill: 'rgba(255,255,255,0.8)', fontSize: 11 }}
                             axisLine={false}
                             tickLine={false}
-                            unit="%"
-                            width={35}
+                            tickFormatter={(value) => `${value}%`}
+                            width={50}
                         />
 
                         <Tooltip content={<CustomTooltip />} />

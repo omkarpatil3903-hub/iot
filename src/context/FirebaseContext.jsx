@@ -99,9 +99,9 @@ export const FirebaseProvider = ({ children }) => {
                         moisture_15cm: esp32Data.moisture_15cm,
                         moisture_30cm: esp32Data.moisture_30cm,
                         moisture_45cm: esp32Data.moisture_45cm,
-                        // Rain (not from ESP32 yet, keep previous or default)
-                        rain_active: false,
-                        rain_intensity: 0,
+                        // Rain (Mapped from ESP32 data)
+                        rain_active: esp32Data.rain_status === "Raining",
+                        rain_intensity: esp32Data.rain_level || 0,
                         // Timestamps
                         esp32Timestamp: esp32Data.timestamp,
                         timestamp: esp32Data.timestamp,
@@ -144,8 +144,12 @@ export const FirebaseProvider = ({ children }) => {
                 if (sensorHistory) {
                     // Convert ESP32 sensor data to history format
                     const entries = Object.entries(sensorHistory);
-                    // Get latest 24 entries for historical charts
+
+                    // Get latest 24 entries for temperature/moisture charts (last 12 hours)
                     const recentEntries = entries.slice(-24);
+
+                    // For rain, use ALL entries (to capture full week)
+                    const allEntries = entries;
 
                     // Calculate timestamps based on current time going backwards
                     // Each entry is ~70 seconds apart based on ESP32 interval
@@ -153,10 +157,16 @@ export const FirebaseProvider = ({ children }) => {
                     const intervalMs = 70000; // 70 seconds between readings
 
                     // Generate proper timestamps (newest to oldest, then reverse)
+                    // Generate proper timestamps using real data if available, fallback to calculation
                     const temperatureHistory = recentEntries.map(([key, data], index) => {
-                        // Calculate time: current time minus (entries from end * interval)
-                        const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
-                        const entryTime = new Date(now.getTime() - timeOffset);
+                        let entryTime;
+                        if (data.timestamp) {
+                            entryTime = new Date(data.timestamp);
+                        } else {
+                            // Fallback: Calculate time based on index (assuming 70s interval)
+                            const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
+                            entryTime = new Date(now.getTime() - timeOffset);
+                        }
 
                         return {
                             timestamp: entryTime.toLocaleTimeString('en-US', {
@@ -171,8 +181,13 @@ export const FirebaseProvider = ({ children }) => {
 
                     // Moisture history (for moisture charts)
                     const moistureHistory = recentEntries.map(([key, data], index) => {
-                        const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
-                        const entryTime = new Date(now.getTime() - timeOffset);
+                        let entryTime;
+                        if (data.timestamp) {
+                            entryTime = new Date(data.timestamp);
+                        } else {
+                            const timeOffset = (recentEntries.length - 1 - index) * intervalMs;
+                            entryTime = new Date(now.getTime() - timeOffset);
+                        }
 
                         return {
                             timestamp: entryTime.toLocaleTimeString('en-US', {
@@ -186,12 +201,73 @@ export const FirebaseProvider = ({ children }) => {
                         };
                     });
 
+                    // Rain history (Aggregate last 7 days) - Use ALL entries
+                    const rainHistoryMap = new Map();
+                    const oneDay = 24 * 60 * 60 * 1000;
+
+                    // Initialize last 7 days
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date(now.getTime() - (i * oneDay));
+                        const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                        rainHistoryMap.set(dateStr, {
+                            date: dateStr,
+                            duration: 0,
+                            intensityValidCount: 0,
+                            visIntensity: 0
+                        });
+                    }
+
+                    // Process ALL available history entries for rain
+                    allEntries.forEach(([key, data]) => {
+                        let entryTime;
+                        if (data.timestamp) {
+                            entryTime = new Date(data.timestamp);
+                        } else {
+                            // Skip if no timestamp (legacy data)
+                            return;
+                        }
+
+                        const dateStr = entryTime.toISOString().split('T')[0];
+
+                        if (rainHistoryMap.has(dateStr)) {
+                            const entry = rainHistoryMap.get(dateStr);
+
+                            // If raining: add duration (30 mins per reading)
+                            if (data.rain_status === "Raining") {
+                                entry.duration += 0.5; // 30 mins = 0.5 hours
+                                entry.visIntensity += (data.rain_level || 0);
+                                entry.intensityValidCount++;
+                            }
+                        }
+                    });
+
+                    // Format for chart
+                    const rainHistory = Array.from(rainHistoryMap.values()).map(day => {
+                        let avgIntensity = 0;
+                        let intensityLabel = 'none';
+
+                        if (day.intensityValidCount > 0) {
+                            avgIntensity = day.visIntensity / day.intensityValidCount;
+
+                            // Categorize intensity
+                            if (avgIntensity > 70) intensityLabel = 'heavy';
+                            else if (avgIntensity > 40) intensityLabel = 'moderate';
+                            else if (avgIntensity > 0) intensityLabel = 'light';
+                        }
+
+                        return {
+                            date: day.date,
+                            duration: day.duration,
+                            intensity: intensityLabel
+                        };
+                    });
+
                     // Only use real data, no mock fallback
                     setHistoricalData(prev => ({
                         ...prev,
                         temperature: temperatureHistory.length > 0 ? temperatureHistory : prev?.temperature,
                         moisture: moistureHistory.length > 0 ? moistureHistory : prev?.moisture,
-                        rain: prev?.rain || [] // Keep rain data if exists
+                        rain: rainHistory // Always use calculated 7-day window (even if all zeros)
                     }));
                 }
             },
@@ -263,8 +339,19 @@ export const FirebaseProvider = ({ children }) => {
         mockHistorical: MOCK_DATA.historical
     };
 
+    // Calculate device status (online if data received < 45 mins ago)
+    // 45 mins threshold allows for 30 min interval + buffer
+    // Use lastUpdate (when we received the data) for more reliable detection
+    const lastSeen = currentData?.lastUpdate || currentData?.timestamp || 0;
+    const isDeviceOnline = useMockData || (lastSeen > 0 && Date.now() - lastSeen < 45 * 60 * 1000);
+
+    const contextValue = {
+        ...value,
+        isDeviceOnline
+    };
+
     return (
-        <FirebaseContext.Provider value={value}>
+        <FirebaseContext.Provider value={contextValue}>
             {children}
         </FirebaseContext.Provider>
     );

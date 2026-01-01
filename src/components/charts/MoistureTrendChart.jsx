@@ -125,7 +125,7 @@ const MoistureTrendChart = ({ data = [], growthStage = 'GERMINATION' }) => {
             {/* Chart */}
             <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="surfaceGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#4A8B42" stopOpacity={0.3} />
@@ -148,11 +148,11 @@ const MoistureTrendChart = ({ data = [], growthStage = 'GERMINATION' }) => {
                         />
                         <YAxis
                             domain={[30, 100]}
-                            tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+                            tick={{ fill: 'rgba(255,255,255,0.8)', fontSize: 11 }}
                             axisLine={false}
                             tickLine={false}
-                            unit="%"
-                            width={35}
+                            tickFormatter={(value) => `${value}%`}
+                            width={50}
                         />
 
                         {/* Optimal zone shaded area */}
