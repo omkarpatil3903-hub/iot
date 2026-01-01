@@ -30,6 +30,7 @@ function App() {
     currentData,
     historicalData,
     isConnected,
+    isDeviceOnline,
     isLoading,
     useMockData,
     mockHistorical
@@ -103,19 +104,30 @@ function App() {
               {/* Theme Toggle */}
               <ThemeToggle />
 
-              {/* Connection Status */}
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${isConnected || useMockData
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : 'bg-red-500/20 text-red-400'
-                }`}>
-                {isConnected || useMockData ? (
-                  <Wifi className="w-4 h-4" />
-                ) : (
-                  <WifiOff className="w-4 h-4" />
-                )}
-                <span className="text-xs font-medium hidden sm:inline">
-                  {useMockData ? 'Demo' : isConnected ? 'Live' : 'Offline'}
-                </span>
+              {/* Connection Status - DUAL INDICATOR */}
+              <div className="flex items-center gap-2">
+                {/* App Network Status */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${isConnected || useMockData
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/20 text-red-400'
+                  }`}
+                  title={isConnected ? "App connected to Firebase" : "App disconnected"}
+                >
+                  {isConnected || useMockData ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+                </div>
+
+                {/* ESP32 Device Status */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${isDeviceOnline
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/20 text-red-400'
+                  }`}
+                  title={isDeviceOnline ? "Device Online (Sending Data)" : "Device Offline (Last seen > 15m ago)"}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isDeviceOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                  <span className="text-xs font-medium hidden sm:inline">
+                    {useMockData ? 'Demo' : isDeviceOnline ? 'Online' : 'Device Offline'}
+                  </span>
+                </div>
               </div>
 
               {/* Mobile Menu Toggle */}
