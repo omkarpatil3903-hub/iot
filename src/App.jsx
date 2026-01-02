@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Leaf, Wifi, WifiOff, RefreshCw, Menu, X, Clock } from 'lucide-react';
+import { Leaf, Wifi, WifiOff, RefreshCw, Menu, X, Clock, Settings } from 'lucide-react';
+import { ref, set, get } from 'firebase/database';
+import { database } from './config/firebase';
 import { useFirebase } from './context/FirebaseContext';
 import { useField } from './context/FieldContext';
 import { SENSOR_DEPTHS } from './config/agronomyConfig';
@@ -7,11 +9,13 @@ import { SENSOR_DEPTHS } from './config/agronomyConfig';
 // Components
 import GrowthStageSelector from './components/GrowthStageSelector';
 import StressAlertCard from './components/StressAlertCard';
-import MoistureGauge from './components/MoistureGauge';
+import SoilProfileVisualization from './components/SoilProfileVisualization';
+import PlantHealthCard from './components/PlantHealthCard';
 import RainStatusIndicator from './components/RainStatusIndicator';
 import RainBarChart from './components/charts/RainBarChart';
 import MoistureTrendChart from './components/charts/MoistureTrendChart';
 import TemperatureChart from './components/charts/TemperatureChart';
+import FieldHistoryChart from './components/charts/FieldHistoryChart';
 import QuickStats from './components/QuickStats';
 import ThemeToggle from './components/ThemeToggle';
 import FieldSelector from './components/FieldSelector';
@@ -25,6 +29,35 @@ import AnomalyAlertCard from './components/AnomalyAlertCard';
 function App() {
   const [growthStage, setGrowthStage] = useState('GERMINATION');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [dataInterval, setDataInterval] = useState(5); // Default 5 mins
+
+  // Handle Settings Save
+  const handleSaveSettings = async () => {
+    if (!database) return;
+    try {
+      const ms = dataInterval * 60 * 1000;
+      await set(ref(database, 'config/send_interval'), ms);
+      alert(`Interval set to ${dataInterval} minutes!`);
+      setShowSettings(false);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings');
+    }
+  };
+
+  // Load initial settings
+  const loadSettings = async () => {
+    if (!database) return;
+    try {
+      const snapshot = await get(ref(database, 'config/send_interval'));
+      if (snapshot.exists()) {
+        setDataInterval(snapshot.val() / 60000);
+      }
+    } catch (error) {
+      console.error("Error loading settings", error);
+    }
+  };
 
   const {
     currentData,
@@ -130,44 +163,85 @@ function App() {
                 </div>
               </div>
 
+              <button
+                onClick={() => { setShowSettings(!showSettings); loadSettings(); }}
+                className="p-2 rounded-lg bg-white/5 text-white/70 hover:bg-white/10 transition-colors"
+                title="Configure Device Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+
+
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="md:hidden p-2 rounded-lg bg-white/5 text-white/70 hover:bg-white/10 transition-colors"
                 aria-label="Toggle menu"
               >
-                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <Menu className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Mobile Menu */}
-          {menuOpen && (
-            <div className="md:hidden mt-4 pt-4 border-t border-white/10 space-y-4">
-              <FieldSelector />
-              <GrowthStageSelector
-                selectedStage={growthStage}
-                onStageChange={setGrowthStage}
-              />
-            </div>
-          )}
         </div>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="md:absolute right-4 top-16 z-50 p-4 bg-surface-dark/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-4">
+            <h3 className="text-sm font-bold text-white mb-3">Device Configuration</h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/60 block mb-1">Data Interval (Minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={dataInterval}
+                  onChange={(e) => setDataInterval(Number(e.target.value))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cane-green"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveSettings}
+                className="w-full bg-cane-green hover:bg-cane-green/90 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden mt-4 pt-4 border-t border-white/10 space-y-4">
+            <FieldSelector />
+            <GrowthStageSelector
+              selectedStage={growthStage}
+              onStageChange={setGrowthStage}
+            />
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Demo Mode Banner */}
-        {useMockData && (
-          <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 backdrop-blur-sm">
-            <div className="p-2 bg-amber-500/20 rounded-lg">
-              <RefreshCw className="w-4 h-4 text-amber-400" />
+        {
+          useMockData && (
+            <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 backdrop-blur-sm">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <RefreshCw className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-amber-400 font-medium">Demo Mode</p>
+                <p className="text-xs text-white/50">Simulated data • Add Firebase credentials for live data</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm text-amber-400 font-medium">Demo Mode</p>
-              <p className="text-xs text-white/50">Simulated data • Add Firebase credentials for live data</p>
-            </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Quick Stats Row */}
         <QuickStats currentData={currentData} growthStage={growthStage} />
@@ -181,7 +255,13 @@ function App() {
         </div>
 
         {/* Alert Cards Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <PlantHealthCard
+            temperature={currentData?.temperature}
+            humidity={currentData?.humidity}
+            moisture={avgMoisture}
+            rainLevel={currentData?.rain_level || 0}
+          />
           <StressAlertCard
             temperature={currentData?.temperature}
             humidity={currentData?.humidity}
@@ -220,35 +300,17 @@ function App() {
           </div>
         </div>
 
-        {/* Moisture Gauges */}
+        {/* Soil Moisture Profile */}
         <div className="mb-6">
           <h2 className="text-sm font-medium text-white/70 mb-4 flex items-center gap-2">
             <span className="w-1 h-4 bg-cane-green rounded-full" />
             Soil Moisture Levels
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <MoistureGauge
-              value={currentData?.moisture_15cm}
-              depth={SENSOR_DEPTHS.SURFACE.depth}
-              label={SENSOR_DEPTHS.SURFACE.label}
-              description={SENSOR_DEPTHS.SURFACE.description}
-              growthStage={growthStage}
-            />
-            <MoistureGauge
-              value={currentData?.moisture_30cm}
-              depth={SENSOR_DEPTHS.MID.depth}
-              label={SENSOR_DEPTHS.MID.label}
-              description={SENSOR_DEPTHS.MID.description}
-              growthStage={growthStage}
-            />
-            <MoistureGauge
-              value={currentData?.moisture_45cm}
-              depth={SENSOR_DEPTHS.ROOT.depth}
-              label={SENSOR_DEPTHS.ROOT.label}
-              description={SENSOR_DEPTHS.ROOT.description}
-              growthStage={growthStage}
-            />
-          </div>
+          <SoilProfileVisualization
+            moisture15={currentData?.moisture_15cm}
+            moisture30={currentData?.moisture_30cm}
+            moisture45={currentData?.moisture_45cm}
+          />
         </div>
 
         {/* Charts Section */}
@@ -267,6 +329,17 @@ function App() {
           <div className="space-y-4">
             <RainBarChart data={rainData} />
             <MoistureTrendChart data={moistureData} growthStage={growthStage} />
+          </div>
+        </div>
+
+        {/* Field History Section */}
+        <div className="mb-6">
+          <h2 className="text-sm font-medium text-white/70 mb-4 flex items-center gap-2">
+            <span className="w-1 h-4 bg-emerald-500 rounded-full" />
+            Live Field History
+          </h2>
+          <div className="bg-white/5 rounded-2xl p-4 border border-white/10 overflow-hidden">
+            <FieldHistoryChart />
           </div>
         </div>
 
