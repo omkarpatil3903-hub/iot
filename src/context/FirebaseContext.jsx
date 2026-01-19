@@ -14,6 +14,10 @@ const MOCK_DATA = {
         humidity: 78,
         rain_active: false,
         rain_intensity: 0,
+        light_lux: 45000,
+        air_quality: 18,
+        air_quality_raw: 650,
+        air_quality_status: 'Good',
         timestamp: Date.now()
     },
     historical: {
@@ -102,6 +106,12 @@ export const FirebaseProvider = ({ children }) => {
                         // Rain (Mapped from ESP32 data)
                         rain_active: esp32Data.rain_status === "Raining",
                         rain_intensity: esp32Data.rain_level || 0,
+                        // BH1750 Light sensor (lux)
+                        light_lux: esp32Data.light_lux || 0,
+                        // MQ135 Air Quality sensor
+                        air_quality: esp32Data.air_quality || 0,
+                        air_quality_raw: esp32Data.air_quality_raw || 0,
+                        air_quality_status: esp32Data.air_quality_status || 'Unknown',
                         // Timestamps
                         esp32Timestamp: esp32Data.timestamp,
                         timestamp: esp32Data.timestamp,

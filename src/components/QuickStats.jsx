@@ -1,4 +1,4 @@
-import { Droplets, Thermometer, CloudRain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Droplets, Thermometer, CloudRain, TrendingUp, TrendingDown, Minus, Sun, Wind } from 'lucide-react';
 import { calculateTHI, getStressLevel } from '../utils/thiCalculator';
 import { getMoistureStatus } from '../config/agronomyConfig';
 
@@ -43,11 +43,40 @@ const QuickStats = ({ currentData, growthStage }) => {
             value: currentData?.rain_active ? 'Active' : 'None',
             color: currentData?.rain_active ? 'text-blue-400' : 'text-white/50',
             bg: currentData?.rain_active ? 'bg-blue-500/20' : 'bg-white/5'
+        },
+        {
+            icon: Sun,
+            label: 'Light',
+            value: currentData?.light_lux !== undefined && currentData?.light_lux !== null
+                ? (currentData.light_lux >= 1000
+                    ? `${(currentData.light_lux / 1000).toFixed(1)}k lx`
+                    : `${currentData.light_lux.toFixed(0)} lx`)
+                : '--',
+            color: currentData?.light_lux > 50000 ? 'text-yellow-300' :
+                currentData?.light_lux > 10000 ? 'text-amber-400' :
+                    currentData?.light_lux > 1000 ? 'text-orange-400' : 'text-white/50',
+            bg: currentData?.light_lux > 50000 ? 'bg-yellow-500/20' :
+                currentData?.light_lux > 10000 ? 'bg-amber-500/20' :
+                    currentData?.light_lux > 1000 ? 'bg-orange-500/20' : 'bg-white/5'
+        },
+        {
+            icon: Wind,
+            label: 'Air Quality',
+            value: currentData?.air_quality !== undefined && currentData?.air_quality !== null
+                ? `${currentData.air_quality}%`
+                : '--',
+            status: currentData?.air_quality_status,
+            color: currentData?.air_quality > 75 ? 'text-red-400' :
+                currentData?.air_quality > 50 ? 'text-orange-400' :
+                    currentData?.air_quality > 25 ? 'text-yellow-400' : 'text-emerald-400',
+            bg: currentData?.air_quality > 75 ? 'bg-red-500/20' :
+                currentData?.air_quality > 50 ? 'bg-orange-500/20' :
+                    currentData?.air_quality > 25 ? 'bg-yellow-500/20' : 'bg-emerald-500/20'
         }
     ];
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (

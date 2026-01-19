@@ -62,7 +62,7 @@ const MoistureTrendChart = ({ growthStage = 'GERMINATION' }) => {
                             backgroundColor: 'rgba(245, 158, 11, 0.1)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         },
@@ -73,7 +73,7 @@ const MoistureTrendChart = ({ growthStage = 'GERMINATION' }) => {
                             backgroundColor: 'rgba(34, 197, 94, 0.1)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         },
@@ -84,7 +84,7 @@ const MoistureTrendChart = ({ growthStage = 'GERMINATION' }) => {
                             backgroundColor: 'rgba(139, 92, 246, 0.1)',
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         }

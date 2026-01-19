@@ -74,7 +74,7 @@ const FieldHistoryChart = () => {
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
                             yAxisID: 'y-left',
                             tension: 0.4,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             pointHoverRadius: 4,
                             spanGaps: true
                         },
@@ -86,7 +86,7 @@ const FieldHistoryChart = () => {
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             yAxisID: 'y-left',
                             tension: 0.4,
-                            pointRadius: 2,
+                            pointRadius: 0,
                             pointHoverRadius: 4,
                             borderDash: [5, 5],
                             spanGaps: true
@@ -111,7 +111,7 @@ const FieldHistoryChart = () => {
                             backgroundColor: 'transparent',
                             yAxisID: 'y-right',
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         },
@@ -123,7 +123,7 @@ const FieldHistoryChart = () => {
                             backgroundColor: 'transparent',
                             yAxisID: 'y-right',
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         },
@@ -135,7 +135,7 @@ const FieldHistoryChart = () => {
                             backgroundColor: 'transparent',
                             yAxisID: 'y-right',
                             tension: 0.4,
-                            pointRadius: 3,
+                            pointRadius: 0,
                             pointHoverRadius: 5,
                             borderWidth: 2
                         }

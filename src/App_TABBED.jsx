@@ -12,8 +12,6 @@ import StressAlertCard from "./components/StressAlertCard";
 import SoilProfileVisualization from "./components/SoilProfileVisualization";
 import PlantHealthCard from "./components/PlantHealthCard";
 import RainStatusIndicator from "./components/RainStatusIndicator";
-import LightSensorCard from "./components/LightSensorCard";
-import AirQualityCard from "./components/AirQualityCard";
 import RainBarChart from "./components/charts/RainBarChart";
 import MoistureTrendChart from "./components/charts/MoistureTrendChart";
 import TemperatureChart from "./components/charts/TemperatureChart";
@@ -32,7 +30,6 @@ import AnomalyAlertCard from "./components/AnomalyAlertCard";
 import WeatherCard from "./components/WeatherCard";
 import WeatherForecast from "./components/WeatherForecast";
 import WeatherRecommendations from "./components/WeatherRecommendations";
-import HeaderWeatherWidget from "./components/HeaderWeatherWidget";
 
 // Navigation
 import TabNavigation, { CollapsibleSection } from "./components/TabNavigation";
@@ -128,7 +125,6 @@ function App() {
                                 {isConnected ? (isDeviceOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />) : <WifiOff className="w-3 h-3" />}
                                 <span>{isConnected ? (isDeviceOnline ? "Live" : "Offline") : "Disconnected"}</span>
                             </div>
-                            <HeaderWeatherWidget />
                             <ThemeToggle />
                             <FieldSelector />
                             <button onClick={() => setShowSettings(!showSettings)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -161,15 +157,11 @@ function App() {
                         <div className="space-y-6">
                             <QuickStats currentData={currentData} avgMoisture={avgMoisture} growthStage={growthStage} />
 
-                            <CollapsibleSection title="Current Status & Alerts" icon={<span className="w-1 h-4 bg-red-500 rounded-full" />} defaultOpen={true} badge="5 cards">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <CollapsibleSection title="Current Status & Alerts" icon={<span className="w-1 h-4 bg-red-500 rounded-full" />} defaultOpen={true} badge="3 cards">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                     <PlantHealthCard temperature={currentData?.temperature} humidity={currentData?.humidity} moisture={avgMoisture} rainLevel={currentData?.rain_intensity || 0} />
                                     <StressAlertCard temperature={currentData?.temperature} humidity={currentData?.humidity} />
                                     <RainStatusIndicator isActive={currentData?.rain_active} intensity={currentData?.rain_intensity || 0} />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                    <LightSensorCard />
-                                    <AirQualityCard />
                                 </div>
                             </CollapsibleSection>
 
