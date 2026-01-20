@@ -57,12 +57,12 @@ function App() {
         }
     };
 
-    const { currentData, historicalData, isConnected, isDeviceOnline, isLoading, useMockData, mockHistorical } = useFirebase();
+    const { currentData, historicalData, isConnected, isDeviceOnline, isLoading } = useFirebase();
     const { activeField } = useField();
 
-    const rainData = historicalData?.rain || mockHistorical.rain;
-    const moistureData = historicalData?.moisture || mockHistorical.moisture;
-    const temperatureData = historicalData?.temperature || mockHistorical.temperature;
+    const rainData = historicalData?.rain || [];
+    const moistureData = historicalData?.moisture || [];
+    const temperatureData = historicalData?.temperature || [];
 
     const avgMoisture = currentData
         ? ((currentData.moisture_15cm || 0) + (currentData.moisture_30cm || 0) + (currentData.moisture_45cm || 0)) / 3
@@ -144,14 +144,55 @@ function App() {
                 </div>
             </header>
 
+            {/* Settings Modal */}
+            {showSettings && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-surface-card border border-white/10 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white">Settings</h2>
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-white/70" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-white/70 mb-2">
+                                    Data Send Interval (minutes)
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="60"
+                                        value={dataInterval}
+                                        onChange={(e) => setDataInterval(Number(e.target.value))}
+                                        className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cane-green"
+                                    />
+                                    <span className="text-white font-bold w-12 text-center">{dataInterval}m</span>
+                                </div>
+                                <p className="text-xs text-white/40 mt-2">
+                                    ESP32 will send sensor data every {dataInterval} minute{dataInterval > 1 ? 's' : ''}
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={handleSaveSettings}
+                                className="w-full py-3 bg-cane-green hover:bg-cane-green/80 text-white font-semibold rounded-xl transition-colors"
+                            >
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-6">
-                {useMockData && (
-                    <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
-                        <RefreshCw className="w-4 h-4 text-amber-400" />
-                        <p className="text-sm text-amber-400">Demo Mode - Simulated data</p>
-                    </div>
-                )}
+
 
                 {/* TABBED DASHBOARD */}
                 <TabNavigation activeTab={activeTab} onTabChange={setActiveTab}>

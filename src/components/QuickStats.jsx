@@ -24,10 +24,23 @@ const QuickStats = ({ currentData, growthStage }) => {
         },
         {
             icon: Thermometer,
-            label: 'Temperature',
-            value: currentData?.temperature !== null ? `${currentData?.temperature?.toFixed(1)}°C` : '--',
+            label: 'Air Temp',
+            value: currentData?.temperature !== null && currentData?.temperature !== undefined ? `${currentData?.temperature?.toFixed(1)}°C` : '--',
             color: 'text-orange-400',
             bg: 'bg-orange-500/20'
+        },
+        {
+            icon: Thermometer,
+            label: 'Soil Temp',
+            value: currentData?.soil_temperature !== null && currentData?.soil_temperature !== undefined && currentData?.soil_temperature !== -127
+                ? `${currentData?.soil_temperature?.toFixed(1)}°C`
+                : '--',
+            color: currentData?.soil_temperature > 35 ? 'text-red-400' :
+                currentData?.soil_temperature > 28 ? 'text-amber-400' :
+                    currentData?.soil_temperature < 15 ? 'text-blue-400' : 'text-emerald-400',
+            bg: currentData?.soil_temperature > 35 ? 'bg-red-500/20' :
+                currentData?.soil_temperature > 28 ? 'bg-amber-500/20' :
+                    currentData?.soil_temperature < 15 ? 'bg-blue-500/20' : 'bg-emerald-500/20'
         },
         {
             icon: stressLevel.isAlert ? TrendingUp : Minus,
@@ -76,7 +89,7 @@ const QuickStats = ({ currentData, growthStage }) => {
     ];
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
             {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
