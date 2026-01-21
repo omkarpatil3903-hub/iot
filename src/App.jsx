@@ -18,6 +18,7 @@ import RainBarChart from "./components/charts/RainBarChart";
 import MoistureTrendChart from "./components/charts/MoistureTrendChart";
 import TemperatureChart from "./components/charts/TemperatureChart";
 import FieldHistoryChart from "./components/charts/FieldHistoryChart";
+import LightHistoryChart from "./components/charts/LightHistoryChart";
 import QuickStats from "./components/QuickStats";
 import ThemeToggle from "./components/ThemeToggle";
 import FieldSelector from "./components/FieldSelector";
@@ -266,6 +267,10 @@ function App() {
 
                             <CollapsibleSection title="Moisture Trends" icon={<span className="w-1 h-4 bg-blue-500 rounded-full" />} defaultOpen={true}>
                                 <MoistureTrendChart data={moistureData} growthStage={growthStage} />
+                            </CollapsibleSection>
+
+                            <CollapsibleSection title="Light Intensity" icon={<span className="w-1 h-4 bg-yellow-500 rounded-full" />} defaultOpen={true}>
+                                <LightHistoryChart />
                             </CollapsibleSection>
 
                             <CollapsibleSection title="Field History" icon={<span className="w-1 h-4 bg-purple-500 rounded-full" />} defaultOpen={false}>
