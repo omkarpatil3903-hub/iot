@@ -13,7 +13,7 @@ const TabNavigation = ({ activeTab, onTabChange, children }) => {
         <div className="w-full">
             {/* Tab Navigation */}
             <div className="sticky top-0 z-40 bg-surface-dark/95 backdrop-blur-lg border-b border-white/10 mb-6">
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 sm:px-0">
+                <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 overflow-x-auto scrollbar-hide px-2 sm:px-4">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
                         const isActive = activeTab === tab.id;
@@ -22,15 +22,15 @@ const TabNavigation = ({ activeTab, onTabChange, children }) => {
                             <button
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all duration-300 whitespace-nowrap ${isActive
-                                        ? 'border-cane-green text-cane-green bg-cane-green/10'
-                                        : 'border-transparent text-white/50 hover:text-white/80 hover:bg-white/5'
+                                className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 border-b-2 transition-all duration-300 flex-1 sm:flex-none min-w-0 ${isActive
+                                    ? 'border-cane-green text-cane-green bg-cane-green/10'
+                                    : 'border-transparent text-white/50 hover:text-white/80 hover:bg-white/5'
                                     }`}
                             >
-                                <Icon className={`w-4 h-4 ${isActive ? 'animate-pulse' : ''}`} />
-                                <span className="text-sm font-medium">{tab.label}</span>
+                                <Icon className={`w-4 h-4 sm:w-4 sm:h-4 flex-shrink-0 ${isActive ? 'animate-pulse' : ''}`} />
+                                <span className="text-xs sm:text-sm font-medium truncate">{tab.label}</span>
                                 {tab.badge && (
-                                    <span className="px-1.5 py-0.5 text-xs bg-red-500/20 text-red-400 rounded-full">
+                                    <span className="px-1.5 py-0.5 text-xs bg-red-500/20 text-red-400 rounded-full hidden sm:inline">
                                         {tab.badge}
                                     </span>
                                 )}

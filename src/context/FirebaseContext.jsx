@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { ref, onValue, off } from 'firebase/database';
 import { database, isConfigured } from '../config/firebase';
 
@@ -262,24 +262,21 @@ export const FirebaseProvider = ({ children }) => {
         };
     }, []);
 
-    // Calculate device status (online if data received < 45 mins ago)
-    // 45 mins threshold allows for 30 min interval + buffer
-    // Use lastUpdate (when we received the data) for more reliable detection
-    const lastSeen = currentData?.lastUpdate || currentData?.timestamp || 0;
-    const isDeviceOnline = lastSeen > 0 && Date.now() - lastSeen < 45 * 60 * 1000;
+    // Memoize device online status
+    const isDeviceOnline = useMemo(() => {
+        const lastSeen = currentData?.lastUpdate || currentData?.timestamp || 0;
+        return lastSeen > 0 && Date.now() - lastSeen < 45 * 60 * 1000;
+    }, [currentData?.lastUpdate, currentData?.timestamp]);
 
-    const value = {
+    // Memoize context value to prevent unnecessary re-renders
+    const contextValue = useMemo(() => ({
         currentData,
         historicalData,
         isConnected,
         isLoading,
-        error
-    };
-
-    const contextValue = {
-        ...value,
+        error,
         isDeviceOnline
-    };
+    }), [currentData, historicalData, isConnected, isLoading, error, isDeviceOnline]);
 
     return (
         <FirebaseContext.Provider value={contextValue}>

@@ -7,4 +7,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    // Enable minification
+    minify: 'esbuild',
+    // Generate source maps for production debugging
+    sourcemap: false,
+    // Target modern browsers for smaller bundle
+    target: 'es2020',
+  },
 })

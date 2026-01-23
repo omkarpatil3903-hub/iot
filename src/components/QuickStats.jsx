@@ -60,11 +60,13 @@ const QuickStats = ({ currentData, growthStage }) => {
         {
             icon: Sun,
             label: 'Light',
-            value: currentData?.light_lux !== undefined && currentData?.light_lux !== null
-                ? (currentData.light_lux >= 1000
-                    ? `${(currentData.light_lux / 1000).toFixed(1)}k lx`
-                    : `${currentData.light_lux.toFixed(0)} lx`)
-                : '--',
+            value: (() => {
+                const lux = currentData?.light_lux;
+                if (lux === undefined || lux === null) return '--';
+                return lux >= 1000
+                    ? `${(lux / 1000).toFixed(1)}k lx`
+                    : `${Number(lux).toFixed(0)} lx`;
+            })(),
             color: currentData?.light_lux > 50000 ? 'text-yellow-300' :
                 currentData?.light_lux > 10000 ? 'text-amber-400' :
                     currentData?.light_lux > 1000 ? 'text-orange-400' : 'text-white/50',

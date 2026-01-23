@@ -11,14 +11,14 @@ const FieldSelector = () => {
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 bg-surface-elevated rounded-xl border border-white/10 hover:border-white/20 transition-colors min-w-[140px]"
+                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-surface-elevated rounded-xl border border-white/10 hover:border-white/20 transition-colors min-w-[100px] sm:min-w-[140px]"
             >
-                <MapPin className="w-4 h-4 text-cane-green" />
-                <div className="flex-1 text-left">
-                    <p className="text-sm text-white font-medium truncate">{activeField?.name}</p>
-                    <p className="text-[10px] text-white/50">{activeField?.area}</p>
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cane-green flex-shrink-0" />
+                <div className="flex-1 text-left min-w-0">
+                    <p className="text-xs sm:text-sm text-white font-medium truncate">{activeField?.name}</p>
+                    <p className="text-[9px] sm:text-[10px] text-white/50 hidden sm:block">{activeField?.area}</p>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-white/50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown */}
@@ -48,10 +48,10 @@ const FieldSelector = () => {
                                         }}
                                         disabled={isInactive}
                                         className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${isActive
-                                                ? 'bg-cane-green/20 text-cane-green'
-                                                : isInactive
-                                                    ? 'opacity-50 cursor-not-allowed'
-                                                    : 'hover:bg-white/5 text-white'
+                                            ? 'bg-cane-green/20 text-cane-green'
+                                            : isInactive
+                                                ? 'opacity-50 cursor-not-allowed'
+                                                : 'hover:bg-white/5 text-white'
                                             }`}
                                     >
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-cane-green' : 'bg-white/10'

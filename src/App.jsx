@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { Leaf, Wifi, WifiOff, RefreshCw, Menu, X, Clock, Settings } from "lucide-react";
-import { ref, set, get } from "firebase/database";
+import { useState, useMemo, lazy, Suspense } from "react";
+import { Leaf, Wifi, WifiOff, Clock, Settings, X } from "lucide-react";
+import { ref, set } from "firebase/database";
 import { database } from "./config/firebase";
 import { useFirebase } from "./context/FirebaseContext";
 import { useField } from "./context/FieldContext";
-import { SENSOR_DEPTHS } from "./config/agronomyConfig";
 
-// Components
+// Core Components (always loaded)
 import GrowthStageSelector from "./components/GrowthStageSelector";
 import StressAlertCard from "./components/StressAlertCard";
 import SoilProfileVisualization from "./components/SoilProfileVisualization";
@@ -14,33 +13,39 @@ import PlantHealthCard from "./components/PlantHealthCard";
 import RainStatusIndicator from "./components/RainStatusIndicator";
 import LightSensorCard from "./components/LightSensorCard";
 import AirQualityCard from "./components/AirQualityCard";
-import RainBarChart from "./components/charts/RainBarChart";
-import MoistureTrendChart from "./components/charts/MoistureTrendChart";
-import TemperatureChart from "./components/charts/TemperatureChart";
-import FieldHistoryChart from "./components/charts/FieldHistoryChart";
-import LightHistoryChart from "./components/charts/LightHistoryChart";
 import QuickStats from "./components/QuickStats";
 import ThemeToggle from "./components/ThemeToggle";
 import FieldSelector from "./components/FieldSelector";
-
-// Analytics Components
-import MoistureAnalyticsCard from "./components/MoistureAnalyticsCard";
-import CWSICard from "./components/CWSICard";
-import GDDCard from "./components/GDDCard";
-import AnomalyAlertCard from "./components/AnomalyAlertCard";
-
-// Weather Components
-import WeatherCard from "./components/WeatherCard";
-import WeatherForecast from "./components/WeatherForecast";
-import WeatherRecommendations from "./components/WeatherRecommendations";
 import HeaderWeatherWidget from "./components/HeaderWeatherWidget";
-
-// Navigation
 import TabNavigation, { CollapsibleSection } from "./components/TabNavigation";
+
+// Lazy-loaded Analytics Components
+const MoistureAnalyticsCard = lazy(() => import("./components/MoistureAnalyticsCard"));
+const CWSICard = lazy(() => import("./components/CWSICard"));
+const GDDCard = lazy(() => import("./components/GDDCard"));
+const AnomalyAlertCard = lazy(() => import("./components/AnomalyAlertCard"));
+
+// Lazy-loaded Weather Components
+const WeatherCard = lazy(() => import("./components/WeatherCard"));
+const WeatherForecast = lazy(() => import("./components/WeatherForecast"));
+const WeatherRecommendations = lazy(() => import("./components/WeatherRecommendations"));
+
+// Lazy-loaded History/Chart Components
+const RainBarChart = lazy(() => import("./components/charts/RainBarChart"));
+const MoistureTrendChart = lazy(() => import("./components/charts/MoistureTrendChart"));
+const TemperatureChart = lazy(() => import("./components/charts/TemperatureChart"));
+const FieldHistoryChart = lazy(() => import("./components/charts/FieldHistoryChart"));
+const LightHistoryChart = lazy(() => import("./components/charts/LightHistoryChart"));
+
+// Suspense fallback component
+const TabLoadingFallback = () => (
+    <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-2 border-cane-green border-t-transparent rounded-full animate-spin" />
+    </div>
+);
 
 function App() {
     const [growthStage, setGrowthStage] = useState("GERMINATION");
-    const [menuOpen, setMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
     const [showSettings, setShowSettings] = useState(false);
     const [dataInterval, setDataInterval] = useState(5);
@@ -65,11 +70,13 @@ function App() {
     const moistureData = historicalData?.moisture || [];
     const temperatureData = historicalData?.temperature || [];
 
-    const avgMoisture = currentData
-        ? ((currentData.moisture_15cm || 0) + (currentData.moisture_30cm || 0) + (currentData.moisture_45cm || 0)) / 3
-        : null;
+    // Memoize expensive calculations
+    const avgMoisture = useMemo(() => {
+        if (!currentData) return null;
+        return ((currentData.moisture_15cm || 0) + (currentData.moisture_30cm || 0) + (currentData.moisture_45cm || 0)) / 3;
+    }, [currentData?.moisture_15cm, currentData?.moisture_30cm, currentData?.moisture_45cm]);
 
-    const calculateRealGDD = () => {
+    const gddData = useMemo(() => {
         if (!temperatureData || temperatureData.length === 0) {
             return { accumulated: 850, daily: 15 };
         }
@@ -87,9 +94,7 @@ function App() {
             }
         });
         return { accumulated: Math.round(totalGDD), daily: Math.round(dailyGDD) };
-    };
-
-    const gddData = calculateRealGDD();
+    }, [temperatureData]);
 
     const currentTime = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
     const currentDate = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -109,31 +114,31 @@ function App() {
         <div className="min-h-screen bg-surface-dark">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-surface-dark/95 backdrop-blur-lg border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-4 py-3">
+                <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-cane-green/20 rounded-xl">
-                                <Leaf className="w-6 h-6 text-cane-green" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 bg-cane-green/20 rounded-xl">
+                                <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-cane-green" />
                             </div>
                             <div>
-                                <h1 className="text-lg font-bold text-white">Sugarcane Monitor</h1>
-                                <div className="flex items-center gap-2 text-xs text-white/50">
+                                <h1 className="text-sm sm:text-lg font-bold text-white">Sugarcane Monitor</h1>
+                                <div className="hidden sm:flex items-center gap-2 text-xs text-white/50">
                                     <Clock className="w-3 h-3" />
                                     <span>{currentDate} • {currentTime}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? (isDeviceOnline ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400") : "bg-red-500/20 text-red-400"}`}>
+                        <div className="flex items-center gap-1.5 sm:gap-3">
+                            <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium ${isConnected ? (isDeviceOnline ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400") : "bg-red-500/20 text-red-400"}`}>
                                 {isConnected ? (isDeviceOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />) : <WifiOff className="w-3 h-3" />}
-                                <span>{isConnected ? (isDeviceOnline ? "Live" : "Offline") : "Disconnected"}</span>
+                                <span className="hidden xs:inline">{isConnected ? (isDeviceOnline ? "Live" : "Offline") : "Disconnected"}</span>
                             </div>
                             <HeaderWeatherWidget />
-                            <ThemeToggle />
+                            <div className="hidden sm:block"><ThemeToggle /></div>
                             <FieldSelector />
-                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <Settings className="w-5 h-5 text-white/70" />
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-colors">
+                                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white/70" />
                             </button>
                         </div>
                     </div>
@@ -223,60 +228,66 @@ function App() {
 
                     {/* ANALYTICS TAB */}
                     {activeTab === 'analytics' && (
-                        <div className="space-y-6">
-                            <CollapsibleSection title="Advanced Analytics" icon={<span className="w-1 h-4 bg-purple-500 rounded-full" />} defaultOpen={true} badge="4 metrics">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <MoistureAnalyticsCard moistureHistory={moistureData} currentMoisture={avgMoisture} growthStage={growthStage} />
-                                    <CWSICard temperature={currentData?.temperature} humidity={currentData?.humidity} soilMoisture={avgMoisture} />
-                                    <GDDCard accumulatedGDD={gddData.accumulated} dailyGDD={gddData.daily} />
-                                    <AnomalyAlertCard currentData={currentData} historicalData={historicalData} />
-                                </div>
-                            </CollapsibleSection>
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <div className="space-y-6">
+                                <CollapsibleSection title="Advanced Analytics" icon={<span className="w-1 h-4 bg-purple-500 rounded-full" />} defaultOpen={true} badge="4 metrics">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <MoistureAnalyticsCard moistureHistory={moistureData} currentMoisture={avgMoisture} growthStage={growthStage} />
+                                        <CWSICard temperature={currentData?.temperature} humidity={currentData?.humidity} soilMoisture={avgMoisture} />
+                                        <GDDCard accumulatedGDD={gddData.accumulated} dailyGDD={gddData.daily} />
+                                        <AnomalyAlertCard currentData={currentData} historicalData={historicalData} />
+                                    </div>
+                                </CollapsibleSection>
 
-                            <CollapsibleSection title="Growth Stage Management" icon={<span className="w-1 h-4 bg-lime-500 rounded-full" />} defaultOpen={true}>
-                                <GrowthStageSelector selectedStage={growthStage} onStageChange={setGrowthStage} plantingDate={activeField?.plantingDate} />
-                            </CollapsibleSection>
-                        </div>
+                                <CollapsibleSection title="Growth Stage Management" icon={<span className="w-1 h-4 bg-lime-500 rounded-full" />} defaultOpen={true}>
+                                    <GrowthStageSelector selectedStage={growthStage} onStageChange={setGrowthStage} plantingDate={activeField?.plantingDate} />
+                                </CollapsibleSection>
+                            </div>
+                        </Suspense>
                     )}
 
                     {/* WEATHER TAB */}
                     {activeTab === 'weather' && (
-                        <div className="space-y-6">
-                            <CollapsibleSection title="Current Weather" icon={<span className="w-1 h-4 bg-blue-500 rounded-full" />} defaultOpen={true}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <WeatherCard />
-                                    <WeatherRecommendations currentMoisture={avgMoisture} />
-                                </div>
-                            </CollapsibleSection>
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <div className="space-y-6">
+                                <CollapsibleSection title="Current Weather" icon={<span className="w-1 h-4 bg-blue-500 rounded-full" />} defaultOpen={true}>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <WeatherCard />
+                                        <WeatherRecommendations currentMoisture={avgMoisture} />
+                                    </div>
+                                </CollapsibleSection>
 
-                            <CollapsibleSection title="7-Day Forecast" icon={<span className="w-1 h-4 bg-cyan-500 rounded-full" />} defaultOpen={true}>
-                                <WeatherForecast />
-                            </CollapsibleSection>
-                        </div>
+                                <CollapsibleSection title="7-Day Forecast" icon={<span className="w-1 h-4 bg-cyan-500 rounded-full" />} defaultOpen={true}>
+                                    <WeatherForecast />
+                                </CollapsibleSection>
+                            </div>
+                        </Suspense>
                     )}
 
                     {/* HISTORY TAB */}
                     {activeTab === 'history' && (
-                        <div className="space-y-6">
-                            <CollapsibleSection title="Temperature & Rain" icon={<span className="w-1 h-4 bg-orange-500 rounded-full" />} defaultOpen={true}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <TemperatureChart data={temperatureData} />
-                                    <RainBarChart data={rainData} />
-                                </div>
-                            </CollapsibleSection>
+                        <Suspense fallback={<TabLoadingFallback />}>
+                            <div className="space-y-6">
+                                <CollapsibleSection title="Temperature & Rain" icon={<span className="w-1 h-4 bg-orange-500 rounded-full" />} defaultOpen={true}>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <TemperatureChart data={temperatureData} />
+                                        <RainBarChart data={rainData} />
+                                    </div>
+                                </CollapsibleSection>
 
-                            <CollapsibleSection title="Moisture Trends" icon={<span className="w-1 h-4 bg-blue-500 rounded-full" />} defaultOpen={true}>
-                                <MoistureTrendChart data={moistureData} growthStage={growthStage} />
-                            </CollapsibleSection>
+                                <CollapsibleSection title="Moisture Trends" icon={<span className="w-1 h-4 bg-blue-500 rounded-full" />} defaultOpen={true}>
+                                    <MoistureTrendChart data={moistureData} growthStage={growthStage} />
+                                </CollapsibleSection>
 
-                            <CollapsibleSection title="Light Intensity" icon={<span className="w-1 h-4 bg-yellow-500 rounded-full" />} defaultOpen={true}>
-                                <LightHistoryChart />
-                            </CollapsibleSection>
+                                <CollapsibleSection title="Light Intensity" icon={<span className="w-1 h-4 bg-yellow-500 rounded-full" />} defaultOpen={true}>
+                                    <LightHistoryChart />
+                                </CollapsibleSection>
 
-                            <CollapsibleSection title="Field History" icon={<span className="w-1 h-4 bg-purple-500 rounded-full" />} defaultOpen={false}>
-                                <FieldHistoryChart />
-                            </CollapsibleSection>
-                        </div>
+                                <CollapsibleSection title="Field History" icon={<span className="w-1 h-4 bg-purple-500 rounded-full" />} defaultOpen={false}>
+                                    <FieldHistoryChart />
+                                </CollapsibleSection>
+                            </div>
+                        </Suspense>
                     )}
 
                 </TabNavigation>
